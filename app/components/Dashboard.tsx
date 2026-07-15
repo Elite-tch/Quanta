@@ -23,6 +23,8 @@ export default function Dashboard({ wallet, onLock }: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [networkStatus, setNetworkStatus] = useState<"connecting" | "connected" | "error">("connecting");
+  const [networkError, setNetworkError] = useState<string | null>(null);
 
   // Send State
   const [sendTo, setSendTo] = useState("");
@@ -55,12 +57,28 @@ export default function Dashboard({ wallet, onLock }: Props) {
 
   const fetchBalance = useCallback(async () => {
     setIsRefreshing(true);
+    setNetworkStatus("connecting");
+    setNetworkError(null);
+    
     try {
       const rpc = new RpcClient(ENDPOINT);
-      const net = await rpc.call("net_version");
-      setNetworkVersion(String(net));
       
-      const balData = await rpc.call("chain_getBalance", [address]);
+      // Add timeout to RPC calls
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Network timeout")), 5000)
+      );
+      
+      const net = await Promise.race([
+        rpc.call("net_version"),
+        timeoutPromise
+      ]);
+      setNetworkVersion(String(net));
+      setNetworkStatus("connected");
+      
+      const balData = await Promise.race([
+        rpc.call("chain_getBalance", [address]),
+        timeoutPromise
+      ]);
       const rawBalance =
         balData && typeof balData === "object" && "balance" in balData
           ? balData.balance
@@ -71,7 +89,10 @@ export default function Dashboard({ wallet, onLock }: Props) {
           : "0"
       );
     } catch (err: unknown) {
-      console.error((err as Error).message || "Failed to connect to network");
+      const errorMsg = (err as Error).message || "Failed to connect to network";
+      console.error("[v0] Network error:", errorMsg);
+      setNetworkStatus("error");
+      setNetworkError(errorMsg);
     } finally {
       setIsRefreshing(false);
     }
@@ -236,12 +257,33 @@ export default function Dashboard({ wallet, onLock }: Props) {
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/10 space-y-4">
           {/* Network Status */}
-          <div className="flex items-center justify-between rounded-xl bg-white/5 p-3 text-xs">
-            <span className="text-white/40">Network</span>
-            <div className="flex items-center gap-2 font-medium">
-              <span className={`h-2 w-2 rounded-full ${networkVersion ? "bg-[#00d4aa] shadow-lg shadow-[#00d4aa]/50" : "bg-red-500"}`}></span>
-              {networkVersion ? `${networkVersion}` : "Connecting..."}
+          <div className="flex flex-col gap-2 rounded-xl bg-white/5 p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-white/40">Network</span>
+              <div className="flex items-center gap-2 font-medium">
+                <span className={`h-2 w-2 rounded-full ${
+                  networkStatus === "connected" ? "bg-[#00d4aa] shadow-lg shadow-[#00d4aa]/50" : 
+                  networkStatus === "error" ? "bg-red-500 shadow-lg shadow-red-500/50" :
+                  "bg-yellow-500 animate-pulse"
+                }`}></span>
+                {networkStatus === "connecting" ? "Connecting..." : 
+                 networkStatus === "connected" ? `Connected (${networkVersion})` : 
+                 "Connection failed"}
+              </div>
             </div>
+            {networkError && (
+              <div className="text-red-400/80 text-xs leading-tight break-words">
+                Error: {networkError}
+              </div>
+            )}
+            {networkStatus === "error" && (
+              <button
+                onClick={fetchBalance}
+                className="text-[#00d4aa] hover:text-[#00d4aa]/80 font-medium text-xs mt-1"
+              >
+                Retry connection
+              </button>
+            )}
           </div>
 
           {/* Security Badge */}
