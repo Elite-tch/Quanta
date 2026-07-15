@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- QuanChain Wallet icon — void background, teal+gold brand accents.
+       Uses only filled shapes (no stroke) so it rasterises reliably across
+       all SVG renderers including ImageMagick's basic backend. -->
+
+  <!-- Void rounded background -->
+  <rect width="128" height="128" rx="28" fill="#08080C"/>
+
+  <!-- Outer teal ring: outer circle r=44 minus inner circle r=40, even-odd fill -->
+  <path fill="#00D4AA" fill-rule="evenodd"
+        d="M 64 20 a 44 44 0 1 0 0.0001 0 z
+           M 64 24 a 40 40 0 1 1 -0.0001 0 z"/>
+
+  <!-- Gold orbital arc (top-right quadrant): annular sector r 36→32 -->
+  <path fill="#C9A84C" fill-rule="evenodd"
+        d="M 64 28 A 36 36 0 0 1 100 64 L 96 64 A 32 32 0 0 0 64 32 Z"/>
+
+  <!-- Q core dot — teal -->
+  <circle cx="64" cy="64" r="10" fill="#00D4AA"/>
+
+  <!-- Q tail — short rounded teal rectangle on a 45° angle -->
+  <rect x="71" y="71" width="20" height="6" rx="3" fill="#00D4AA"
+        transform="rotate(45 81 74)"/>
+</svg>

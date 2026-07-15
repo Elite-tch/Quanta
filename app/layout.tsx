@@ -1,0 +1,20 @@
+import "./globals.css";
+
+export const metadata = {
+  title: "QuanVault",
+  description: "The easiest way to create a QuanChain testnet wallet.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="bg-gray-900 text-white min-h-screen">
+        {children}
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuanVault</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen active">
+      <div class="logo-container">
+        <img src="../icons/logo-80.png" alt="QuanVault" class="logo-img">
+        <div class="logo-text">QuanVault</div>
+        <div class="logo-tagline">QuanChain Testnet Onboarding</div>
+      </div>
+      <div class="spinner"></div>
+      <p class="loading-text">Initializing TADEQS...</p>
+    </div>
+
+    <!-- Welcome Screen (No Wallet) -->
+    <div id="welcome-screen" class="screen">
+      <div class="logo-container">
+        <img src="../icons/logo-80.png" alt="QuanVault" class="logo-img">
+        <div class="logo-text">QuanVault</div>
+        <div class="logo-tagline">Simple testnet wallet</div>
+      </div>
+      <p class="subtitle">Create a wallet, get test QCH, and start testing in minutes.</p>
+
+      <div class="info-box">
+        QuanVault is built for first-time QuanChain users and developers who want a fast testnet onboarding flow.
+      </div>
+
+      <div class="tadeqs-info">
+        <div class="info-item">
+          <span class="info-label">Parent Wallet</span>
+          <span class="info-value">64 KB Entropy</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Security Levels</span>
+          <span class="info-value">1-20 (15 implemented)</span>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="btn-create-wallet" class="btn btn-primary">
+          Create New Wallet
+        </button>
+        <button id="btn-import-wallet" class="btn btn-secondary">
+          Import Parent Wallet
+        </button>
+      </div>
+
+      <div class="warning-box">
+        <strong>Recovery rule:</strong> export and store your parent wallet data offline. If you lose it, you lose access to every derived address.
+      </div>
+
+      <div class="network-badge">
+        <span class="dot"></span>
+        Testnet
+      </div>
+    </div>
+
+    <!-- Create Wallet Screen -->
+    <div id="create-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-create">&larr;</button>
+        <h2>Create QuanVault Wallet</h2>
+      </div>
+
+      <div class="info-box">
+        QuanVault generates one secure parent wallet that can derive all of your addresses.
+        Keep the backup file offline and private.
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="create-password" placeholder="Enter password (min 8 chars)">
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="create-password-confirm" placeholder="Confirm password">
+      </div>
+
+      <button id="btn-create-confirm" class="btn btn-primary btn-full">
+        Generate Wallet
+      </button>
+    </div>
+
+    <!-- Wallet Created Success Screen -->
+    <div id="created-screen" class="screen">
+      <div class="header">
+        <h2>Wallet Created!</h2>
+      </div>
+
+      <div class="success-icon">&#10003;</div>
+
+      <div class="warning-box">
+        <strong>Important!</strong> Your wallet is ready. Export your parent wallet from Settings and store it offline before moving value.
+      </div>
+
+      <div class="created-info">
+        <div class="info-item">
+          <span class="info-label">Parent Wallet Size</span>
+          <span class="info-value" id="created-size">64 KB</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Derived Addresses</span>
+          <span class="info-value">20 (all levels)</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Active Level</span>
+          <span class="info-value" id="created-level">5</span>
+        </div>
+      </div>
+
+      <button id="btn-created-continue" class="btn btn-primary btn-full">
+        Continue to Wallet
+      </button>
+    </div>
+
+    <!-- Import Wallet Screen -->
+    <div id="import-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-import">&larr;</button>
+        <h2>Import QuanVault Wallet</h2>
+      </div>
+
+      <div class="info-box">
+        Paste your parent wallet backup to restore access to all derived addresses.
+        Keep the file private. Anyone with it can restore the wallet.
+      </div>
+
+      <div class="form-group">
+        <label>Parent Wallet Data (Hex)</label>
+        <textarea id="import-entropy" placeholder="Paste your 64KB parent wallet hex data..." rows="6"></textarea>
+        <small class="help-text">Expected: 131,072 hex characters (64 KB)</small>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="import-password" placeholder="Create a new password">
+      </div>
+
+      <button id="btn-import-confirm" class="btn btn-primary btn-full">
+        Import Wallet
+      </button>
+    </div>
+
+    <!-- Unlock Screen -->
+    <div id="unlock-screen" class="screen">
+      <div class="logo-container small">
+        <img src="../icons/logo-60.png" alt="QuanChain" class="logo-img-small">
+      </div>
+
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Unlock your QuanVault wallet</p>
+
+      <div class="form-group">
+        <input type="password" id="unlock-password" placeholder="Enter password">
+      </div>
+
+      <button id="btn-unlock" class="btn btn-primary btn-full">
+        Unlock
+      </button>
+
+      <div id="unlock-error" class="error-text"></div>
+    </div>
+
+    <!-- Main Wallet Screen -->
+    <div id="main-screen" class="screen">
+      <div class="header-main">
+        <div class="header-brand">
+          <img src="../icons/icon48.png" alt="QC" class="header-logo">
+          <div class="header-brand-text">
+            <span class="header-brand-name">QuanVault</span>
+            <div class="network-indicator">
+              <span class="dot"></span>
+              <span id="network-status">Testnet</span>
+            </div>
+          </div>
+        </div>
+        <!-- Wallet Selector Dropdown -->
+        <div class="wallet-selector">
+          <button id="btn-wallet-selector" class="btn-wallet-selector" title="Switch Wallet">
+            <span id="current-wallet-name">Wallet 1</span>
+            <span class="wallet-selector-arrow">&#9662;</span>
+          </button>
+          <div id="wallet-dropdown" class="wallet-dropdown hidden">
+            <div id="wallet-list" class="wallet-list">
+              <!-- Wallets populated dynamically -->
+            </div>
+            <div class="wallet-dropdown-actions">
+              <button id="btn-create-new-wallet" class="wallet-action-btn">+ Create New Wallet</button>
+              <button id="btn-import-new-wallet" class="wallet-action-btn">Import Wallet</button>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="btn-header-refresh" class="btn-icon" title="Refresh">&#8635;</button>
+          <button id="btn-settings" class="btn-icon" title="Settings">&#9776;</button>
+        </div>
+      </div>
+
+      <div class="security-level-badge" id="security-badge">
+        <span class="level-number" id="level-number">5</span>
+        <span class="level-name" id="level-name">ECDSA+RSA-4096</span>
+        <button class="btn-change-level" id="btn-change-level">Change</button>
+      </div>
+
+      <div class="account-info">
+        <div class="account-name" id="account-name">Account 1</div>
+        <div class="account-address" id="account-address">QC5_xxx...xxx</div>
+        <button class="btn-copy" id="btn-copy-address" title="Copy address">&#128203;</button>
+      </div>
+
+      <div class="balance-display">
+        <div class="balance-label">Balance</div>
+        <div class="balance-amount" id="balance-amount">0.00</div>
+        <div class="balance-symbol">QCH</div>
+        <button id="btn-get-test-qch" class="btn-faucet" type="button" title="Drip 100 testnet QCH to this address">
+          Get test QCH
+        </button>
+        <div id="faucet-feedback" class="faucet-feedback hidden"></div>
+      </div>
+
+      <!-- Migration Alert -->
+      <div id="migration-alert" class="migration-alert hidden">
+        <div class="alert-icon">&#9888;</div>
+        <div class="alert-content">
+          <div class="alert-title">Migration Recommended</div>
+          <div class="alert-text" id="migration-text">Consider migrating to a higher security level</div>
+        </div>
+        <button class="btn-migrate" id="btn-migrate">Migrate</button>
+      </div>
+
+      <!-- Parent Registration Status (Track A) -->
+      <div id="parent-status" class="parent-status hidden">
+        <!-- Filled dynamically. Two states:
+             1. Unregistered → shows warning + parent address + Register button
+             2. Registered → shows green check + tx hash link -->
+      </div>
+
+      <div class="action-buttons">
+        <button class="action-btn" id="btn-send">
+          <span class="action-icon">&#8593;</span>
+          Send
+        </button>
+        <button class="action-btn" id="btn-receive">
+          <span class="action-icon">&#8595;</span>
+          Receive
+        </button>
+        <button class="action-btn" id="btn-refresh">
+          <span class="action-icon">&#8635;</span>
+          Refresh
+        </button>
+      </div>
+
+      <div class="transactions-section">
+        <h3>Recent Activity</h3>
+        <div id="transactions-list" class="transactions-list">
+          <div class="empty-state">No transactions yet</div>
+        </div>
+      </div>
+
+      <button id="btn-lock" class="btn btn-secondary btn-full">
+        Lock Wallet
+      </button>
+    </div>
+
+    <!-- Security Levels Screen -->
+    <div id="levels-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-levels">&larr;</button>
+        <h2>Security Levels</h2>
+      </div>
+
+      <div class="levels-info">
+        <p>Select a security level based on the value you're protecting.</p>
+      </div>
+
+      <div class="levels-tabs">
+        <button class="tab active" data-category="classical">Classical (1-5)</button>
+        <button class="tab" data-category="hybrid">Hybrid (6-11)</button>
+        <button class="tab" data-category="pq">Post-Quantum (12-15)</button>
+        <button class="tab" data-category="reserved">Reserved (16-20)</button>
+      </div>
+
+      <div id="levels-list" class="levels-list">
+        <!-- Levels will be populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Send Screen -->
+    <div id="send-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-send">&larr;</button>
+        <h2>Send QCH</h2>
+      </div>
+
+      <div class="current-level-info">
+        Sending from Level <span id="send-level">5</span> address
+      </div>
+
+      <div class="form-group">
+        <label>Recipient Address</label>
+        <input type="text" id="send-to" placeholder="QC{level}_...">
+      </div>
+
+      <div class="form-group">
+        <label>Amount (QCH)</label>
+        <input type="number" id="send-amount" placeholder="0.00" step="0.000000001">
+        <button class="btn-max" id="btn-send-max">MAX</button>
+      </div>
+
+      <div class="fee-display">
+        <span>Estimated Fee:</span>
+        <span id="estimated-fee">~0.0252 QCH</span>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="send-password" placeholder="Enter password to sign">
+      </div>
+
+      <button id="btn-send-confirm" class="btn btn-primary btn-full">
+        Send Transaction
+      </button>
+
+      <div id="send-error" class="error-text"></div>
+      <div id="send-success" class="success-text"></div>
+    </div>
+
+    <!-- Receive Screen -->
+    <div id="receive-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-receive">&larr;</button>
+        <h2>Receive QCH</h2>
+      </div>
+
+      <div class="level-selector-receive">
+        <label>Receive at Security Level:</label>
+        <select id="receive-level-select">
+          <!-- Options populated dynamically -->
+        </select>
+      </div>
+
+      <div class="qr-container">
+        <div id="qr-code" class="qr-code">
+          <div class="qr-placeholder">QR</div>
+        </div>
+      </div>
+
+      <div class="address-display">
+        <div class="address-label">Your Level <span id="receive-level-label">5</span> Address</div>
+        <div class="address-value" id="receive-address">QC5_xxx...xxx</div>
+        <button class="btn btn-secondary btn-full" id="btn-copy-receive">
+          Copy Address
+        </button>
+      </div>
+    </div>
+
+    <!-- Migration Screen -->
+    <div id="migrate-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-migrate">&larr;</button>
+        <h2>Migrate Funds</h2>
+      </div>
+
+      <div class="info-box">
+        Migrate your funds to a higher security level for better quantum resistance.
+        Migration transactions have priority processing.
+      </div>
+
+      <div class="migration-form">
+        <div class="form-group">
+          <label>From Level</label>
+          <select id="migrate-from">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="migration-arrow">&#8595;</div>
+
+        <div class="form-group">
+          <label>To Level</label>
+          <select id="migrate-to">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Amount (QCH)</label>
+          <input type="number" id="migrate-amount" placeholder="0.00" step="0.000000001">
+          <button class="btn-max" id="btn-migrate-max">MAX</button>
+        </div>
+
+        <div class="migration-fee">
+          <span>Migration Fee:</span>
+          <span id="migration-fee">~0.01 QCH</span>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="migrate-password" placeholder="Enter password">
+        </div>
+
+        <button id="btn-migrate-confirm" class="btn btn-primary btn-full">
+          Migrate Funds
+        </button>
+      </div>
+
+      <div id="migrate-error" class="error-text"></div>
+      <div id="migrate-success" class="success-text"></div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-settings">&larr;</button>
+        <h2>Settings</h2>
+      </div>
+
+      <div class="settings-section">
+        <h3>TADEQS Information</h3>
+        <div class="setting-info">
+          <div class="info-row">
+            <span>Parent Wallet Size</span>
+            <span>64 KB (65,536 bytes)</span>
+          </div>
+          <div class="info-row">
+            <span>Encryption</span>
+            <span>AES-256-GCM</span>
+          </div>
+          <div class="info-row">
+            <span>Key Derivation</span>
+            <span>PBKDF2 (600,000 iterations)</span>
+          </div>
+          <div class="info-row">
+            <span>Child Key Expansion</span>
+            <span>HKDF-SHA256</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Network</h3>
+        <div class="setting-item">
+          <label>RPC Endpoint</label>
+          <select id="settings-endpoint">
+            <option value="https://5-189-184-7.sslip.io">HTTPS LB (recommended)</option>
+            <option value="http://5.189.184.7:8545">Validator 1 — Faucet (HTTP)</option>
+            <option value="http://5.189.184.7:8546">Validator 2 (HTTP)</option>
+            <option value="http://5.189.184.7:8547">Validator 3 (HTTP)</option>
+            <option value="http://5.189.184.7:8548">Validator 4 (HTTP)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Backup</h3>
+        <button id="btn-export-wallet" class="btn btn-secondary btn-full">
+          Export 64KB Parent Wallet
+        </button>
+        <small class="help-text danger">
+          This exports your complete parent wallet. Anyone with this data can derive ALL your addresses!
+        </small>
+      </div>
+
+      <div class="settings-section">
+        <h3>All Addresses</h3>
+        <button id="btn-view-all-addresses" class="btn btn-secondary btn-full">
+          View All 20 Level Addresses
+        </button>
+      </div>
+
+      <div class="settings-section">
+        <h3>Wallet Management</h3>
+        <button id="btn-rename-wallet" class="btn btn-secondary btn-full">
+          Rename Current Wallet
+        </button>
+        <div class="wallet-count-info" id="wallet-count-info">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="settings-section danger">
+        <h3>Danger Zone</h3>
+        <button id="btn-reset-wallet" class="btn btn-danger btn-full">
+          Reset Wallet
+        </button>
+      </div>
+
+      <div class="version-info">
+        QuanVault v1.0.0
+      </div>
+    </div>
+
+    <!-- All Addresses Screen -->
+    <div id="addresses-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-addresses">&larr;</button>
+        <h2>All Level Addresses</h2>
+      </div>
+
+      <div class="addresses-info">
+        <p>All 20 addresses derived from your 64KB parent wallet:</p>
+      </div>
+
+      <div id="all-addresses-list" class="addresses-list">
+        <!-- Addresses populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Rename Wallet Screen -->
+    <div id="rename-wallet-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-rename">&larr;</button>
+        <h2>Rename Wallet</h2>
+      </div>
+
+      <div class="info-box">
+        Wallet names are stored locally on your device only.
+        They are not stored on-chain.
+      </div>
+
+      <div class="form-group">
+        <label>Current Name</label>
+        <div id="rename-current-name" class="current-name-display">Wallet 1</div>
+      </div>
+
+      <div class="form-group">
+        <label>New Name</label>
+        <input type="text" id="rename-new-name" placeholder="Enter new wallet name" maxlength="32">
+        <small class="help-text">Max 32 characters</small>
+      </div>
+
+      <button id="btn-rename-confirm" class="btn btn-primary btn-full">
+        Save Name
+      </button>
+
+      <div id="rename-error" class="error-text"></div>
+      <div id="rename-success" class="success-text"></div>
+    </div>
+
+    <!-- Create Additional Wallet Screen (for adding new wallets from dropdown) -->
+    <div id="create-additional-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-create-additional">&larr;</button>
+        <h2>Create New Wallet</h2>
+      </div>
+
+      <div class="info-box">
+        Create an additional TADEQS wallet. Each wallet has its own 64KB entropy
+        and derives separate addresses for all 20 security levels.
+      </div>
+
+      <div class="form-group">
+        <label>Wallet Name (optional)</label>
+        <input type="text" id="create-additional-name" placeholder="e.g., Savings, Trading, etc." maxlength="32">
+      </div>
+
+      <div class="form-group">
+        <label>Enter Your Password</label>
+        <input type="password" id="create-additional-password" placeholder="Current password">
+        <small class="help-text">Use your existing wallet password</small>
+      </div>
+
+      <button id="btn-create-additional-confirm" class="btn btn-primary btn-full">
+        Generate New 64KB Wallet
+      </button>
+
+      <div id="create-additional-error" class="error-text"></div>
+    </div>
+
+    <!-- Import Additional Wallet Screen -->
+    <div id="import-additional-screen" class="screen">
+      <div class="header">
+        <button class="btn-back" id="btn-back-import-additional">&larr;</button>
+        <h2>Import Additional Wallet</h2>
+      </div>
+
+      <div class="info-box">
+        Import an existing 64KB parent wallet to add to your wallet collection.
+      </div>
+
+      <div class="form-group">
+        <label>Wallet Name (optional)</label>
+        <input type="text" id="import-additional-name" placeholder="e.g., Old Wallet, Hardware, etc." maxlength="32">
+      </div>
+
+      <div class="form-group">
+        <label>Parent Wallet Data (Hex)</label>
+        <textarea id="import-additional-entropy" placeholder="Paste your 64KB parent wallet hex data..." rows="4"></textarea>
+        <small class="help-text">Expected: 131,072 hex characters (64 KB)</small>
+      </div>
+
+      <div class="form-group">
+        <label>Enter Your Password</label>
+        <input type="password" id="import-additional-password" placeholder="Current password">
+      </div>
+
+      <button id="btn-import-additional-confirm" class="btn btn-primary btn-full">
+        Import Wallet
+      </button>
+
+      <div id="import-additional-error" class="error-text"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
