@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Wallet } from "../lib/wallet";
-import { RpcClient } from "../lib/rpc";
+import { RpcClient } from "../lib/rpc-client";
 import QRCode from "react-qr-code";
 import TransactionHistory from "./TransactionHistory";
 import Settings from "./Settings";
