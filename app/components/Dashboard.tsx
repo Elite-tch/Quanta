@@ -4,6 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { Wallet } from "../lib/wallet";
 import { RpcClient } from "../lib/rpc";
 import QRCode from "react-qr-code";
+import TransactionHistory from "./TransactionHistory";
+import Settings from "./Settings";
+import ImportWallet from "./ImportWallet";
+import { saveTransaction, Transaction } from "../lib/storage";
 
 interface Props {
   wallet: Wallet;
@@ -13,10 +17,12 @@ interface Props {
 const ENDPOINT = "http://5.189.184.7:8545";
 
 export default function Dashboard({ wallet, onLock }: Props) {
-  const [view, setView] = useState<"home" | "send" | "receive">("home");
+  const [view, setView] = useState<"home" | "send" | "receive" | "history">("home");
   const [balance, setBalance] = useState("0");
   const [networkVersion, setNetworkVersion] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // Send State
   const [sendTo, setSendTo] = useState("");
@@ -118,6 +124,20 @@ export default function Dashboard({ wallet, onLock }: Props) {
       const rpc = new RpcClient(ENDPOINT);
       const res = await rpc.call("tx_submitTransaction", [signedTx]);
 
+      // Save transaction to history
+      const transaction: Transaction = {
+        id: res.tx_hash || `tx_${Date.now()}`,
+        type: "send",
+        from: address,
+        to: sendTo,
+        amount: sendAmount,
+        timestamp: Date.now(),
+        status: "confirmed",
+        hash: res.tx_hash,
+        level: securityLevel
+      };
+      saveTransaction(transaction);
+
       setSendFeedback({ type: "success", msg: `Transaction submitted! Hash: ${res.tx_hash || 'unknown'}` });
       setSendTo("");
       setSendAmount("");
@@ -197,6 +217,20 @@ export default function Dashboard({ wallet, onLock }: Props) {
             </svg>
             Receive
           </button>
+
+          <button
+            onClick={() => setView("history")}
+            className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+              view === "history"
+                ? "bg-[#00d4aa]/10 text-[#00d4aa]"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            History
+          </button>
         </nav>
 
         {/* Sidebar Footer */}
@@ -218,15 +252,27 @@ export default function Dashboard({ wallet, onLock }: Props) {
             </span>
           </div>
 
+          {/* Settings Button */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors active:scale-[0.98]"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </button>
+
           {/* Lock Button */}
           <button
             onClick={onLock}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 py-2.5 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/10 active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 py-2.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10 active:scale-[0.98]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            Lock Wallet
+            Lock
           </button>
         </div>
       </aside>
@@ -279,7 +325,7 @@ export default function Dashboard({ wallet, onLock }: Props) {
                   className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-sm font-semibold hover:bg-white/20 transition-all active:scale-[0.98]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 012 2h2a2 2 0 012-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                   </svg>
                   Copy Address
                 </button>
@@ -400,7 +446,36 @@ export default function Dashboard({ wallet, onLock }: Props) {
             </div>
           </div>
         )}
+
+        {view === "history" && (
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold">Transaction History</h2>
+              <p className="text-white/60 text-sm mt-2">All your recent activity on QuanChain</p>
+            </div>
+            <TransactionHistory />
+          </div>
+        )}
       </main>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <Settings
+          onClose={() => setShowSettings(false)}
+          onExport={() => alert("Export wallet feature coming soon!")}
+        />
+      )}
+
+      {/* Import Wallet Modal */}
+      {showImport && (
+        <ImportWallet
+          onClose={() => setShowImport(false)}
+          onImport={async (walletData, password) => {
+            // Implementation would go here
+            console.log("Import wallet", walletData, password);
+          }}
+        />
+      )}
     </div>
   );
 }
